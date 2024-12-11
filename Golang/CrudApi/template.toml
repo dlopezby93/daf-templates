@@ -1,0 +1,14 @@
+# Required, name of the template
+name = "Golang Crud API"
+description = "A fully-featured Golang template"
+kickstart_version = 1
+# If this is set, kickstart will use this directory as a base for the template instead of
+# the root directory. This is useful when your template has its own documentation/CI/etc and you don't want
+# to ignore it.
+#directory = "some-directory"
+
+# A list of variables, the schema is explained in detail below
+[[variables]]
+name = "project_name"
+default = "my-project"
+prompt = "What is the name of this project?"
