@@ -9,6 +9,6 @@ kickstart_version = 1
 
 # A list of variables, the schema is explained in detail below
 [[variables]]
-name = "project_name"
-default = "my-project"
-prompt = "What is the name of this project?"
+name = "module_name"
+default = "mymodule"
+prompt = "What is the name of this Go module?"
