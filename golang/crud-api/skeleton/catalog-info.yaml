@@ -1,17 +1,17 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: ${{values.component_id}}
-  description: ${{values.description}}
+  name: ${{values.repo_name}}
+  description: A Query Golang API
   annotations:
-    github.com/project-slug: ${{values.owner}}/${{values.component_id}}
+    github.com/project-slug: dlopezby93/${{values.repo_name}}
     backstage.io/techdocs-ref: dir:.
   tags:
     - golang
     - api
-    - crud
+    - ddd
   links:
-    - url: https://github.com/${{values.owner}}/${{values.component_id}}
+    - url: https://github.com/dlopezby93/${{values.repo_name}}
       title: GitHub Repo
       icon: github
 spec:

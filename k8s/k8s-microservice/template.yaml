@@ -1,0 +1,51 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: k8s-microservice
+  title: K8s Microservice
+  description: A K8s Microservice template
+  tags:
+    - k8s
+    - microservice
+    - kubernetes
+  type: service
+  approved: false
+
+spec:
+  type: service
+  parameters:
+    - title: Provide basic information
+      required:
+        - component_id
+        - owner
+        - system
+        - repo_name
+        - repo_org
+      properties:
+        component_id:
+          title: Component ID
+          type: string
+          description: Unique identifier for the component
+          ui:field: EntityNamePicker
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        owner:
+          title: Owner
+          type: string
+          description: Owner of the component
+          ui:field: OwnerPicker
+          ui:options:
+            allowedKinds:
+              - Group
+        system:
+          title: System
+          type: string
+          description: System that the component belongs to
+          ui:field: EntityNamePicker
+          ui:options:
+            allowedKinds:
+              - System
+        repo_name:
+          title: Repository Name
+          type: string
+          description: Name of the GitHub repository (will be created under the selected organization)
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'

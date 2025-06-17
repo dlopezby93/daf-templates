@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: spin-templates
+  description: DAF Templates for Backstage
+spec:
+  targets:
+    - ./golang/ddd-api/template.yaml
+    - ./golang/crud-api/template.yaml

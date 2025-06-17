@@ -1,15 +1,15 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: golang-crud-api
-  title: Golang CRUD API
-  description: A fully-featured Golang CRUD API template with clean architecture
+  name: golang-query-api
+  title: Go Microservice Query API
+  description: A Query Golang Microservice template
   tags:
     - golang
     - api
-    - crud
-    - recommended
+    - query
   type: service
+  approved: false
 
 spec:
   type: service
@@ -19,6 +19,9 @@ spec:
         - component_id
         - owner
         - system
+        - repo_name
+        - repo_org
+        - ticket_id
       properties:
         component_id:
           title: Component ID
@@ -42,36 +45,117 @@ spec:
           ui:options:
             allowedKinds:
               - System
+        repo_org:
+          title: Github repository organization
+          type: string
+          default: fintechdigitalventure
+          enum:
+            - fintechdigitalventure
+            - digitaltitransversal
+          enumNames:
+            - Fintech Digital Venture
+            - Digital Transversal            
+        repo_name:
+          title: Repository Name
+          type: string
+          description: Name of the GitHub repository (will be created under the selected organization)
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
         module_name:
           title: Go Module Name
           type: string
           description: Name of the Go module
           default: mymodule
           pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        ticket_id:
+          title: Ticket ID
+          type: string
+          description: Jira Ticket ID of the component
+          pattern: ^[A-Z]{1,10}-[A-Za-z0-9]{1,6}$
 
   steps:
+    - id: validate-jira-ticket
+      name: Validate Jira Ticket
+      action: custom:jira:validate-ticket
+      input:
+        jiraTicketId: ${{ parameters.ticket_id }}
+
     - id: template
       name: Fetch Template
       action: fetch:template
       input:
         url: ./skeleton
+        targetPath: ./templates/outputs
         values:
           component_id: ${{ parameters.component_id }}
           owner: ${{ parameters.owner }}
           system: ${{ parameters.system }}
           module_name: ${{ parameters.module_name }}
+          repo_name: ${{ parameters.repo_name }}
 
-    - id: publish
-      name: Publish
-      action: publish:github
+    - id: k8s-template
+      name: Fetch K8s Microservice Template
+      action: fetch:template
       input:
-        allowedHosts: ['github.com']
-        description: This is ${{ parameters.component_id }}
-        repoUrl: ${{ parameters.repoUrl }}
+        url: https://github.com/dlopezby93/daf-templates/tree/main/k8s/k8s-microservice/skeleton
+        targetPath: ./templates/k8s-outputs
+        values:
+          component_id: ${{ parameters.component_id }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          repo_name: ${{ parameters.repo_name }}
 
-    - id: register
-      name: Register
-      action: catalog:register
+    - id: create-repos
+      name: Create Repositories
+      action: custom:github:create-repositories
       input:
-        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
-        catalogInfoPath: '/catalog-info.yaml' 
+        repoUrl: github.com?owner=${{ parameters.repo_org }}&repo=${{ parameters.repo_name }}
+        createKubernetesRepo: true
+
+    - id: create-pr
+      name: Create Pull Request
+      action: publish:github:pull-request
+      input:
+        description: This PR creates the initial structure for ${{ parameters.component_id }}
+        repoUrl: github.com?owner=${{ parameters.repo_org }}&repo=${{ parameters.repo_name }}
+        title: 'feat(${{ parameters.ticket_id }}): Setup initial structure for ${{ parameters.component_id }}'
+        branchName: feature/${{ parameters.ticket_id }}-initial-setup
+        sourcePath: ./templates/outputs
+        targetBranchName: main
+
+    - id: create-k8s-pr
+      name: Create Kubernetes Pull Request
+      action: publish:github:pull-request
+      input:
+        description: This PR creates the Kubernetes configuration for ${{ parameters.component_id }}
+        repoUrl: github.com?owner=${{ parameters.repo_org }}&repo=${{ steps['create-repos'].output.kubernetesRepo.name }}
+        title: 'feat(${{ parameters.ticket_id }}): Setup Kubernetes configuration for ${{ parameters.component_id }}'
+        branchName: feature/${{ parameters.ticket_id }}-k8s-setup
+        sourcePath: ./templates/k8s-outputs
+        targetBranchName: main
+
+    - id: configure-environments
+      name: Configure GitHub Environments
+      action: custom:github:create-environments
+      input:
+        repoUrl: github.com?owner=${{ parameters.repo_org }}&repo=${{ parameters.repo_name }}
+        githubToken: ${{ secrets.githubToken }}
+        environments:
+          qa:
+            VAR_A: "qa_value"
+            VAR_B: "qa_secret"
+          stg:
+            VAR_A: "stg_value"
+            VAR_B: "stg_secret"
+          prd:
+            VAR_A: "prd_value"
+            VAR_B: "prd_secret"
+
+  output:
+    links:
+      - title: Pull Request
+        url: ${{ steps['create-pr'].output.remoteUrl }}
+        icon: github
+      - title: Kubernetes Pull Request
+        url: ${{ steps['create-k8s-pr'].output.remoteUrl }}
+        icon: github
+        if: ${{ parameters.create_kubernetes_repo }}

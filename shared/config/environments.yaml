@@ -1,0 +1,48 @@
+environments:
+  development:
+    deploymentBranchPolicy:
+      protectedBranches: false
+      customBranches: ['develop']
+    environmentVariables:
+      - name: ENVIRONMENT
+        value: development
+      - name: API_VERSION
+        value: v1
+      - name: LOG_LEVEL
+        value: debug
+      - name: MONGO_URI
+        value: mongodb://localhost:27017
+      - name: MONGO_DATABASE
+        value: development_db
+
+  staging:
+    deploymentBranchPolicy:
+      protectedBranches: false
+      customBranches: ['staging']
+    environmentVariables:
+      - name: ENVIRONMENT
+        value: staging
+      - name: API_VERSION
+        value: v1
+      - name: LOG_LEVEL
+        value: info
+      - name: MONGO_URI
+        value: mongodb://staging-mongo:27017
+      - name: MONGO_DATABASE
+        value: staging_db
+
+  production:
+    deploymentBranchPolicy:
+      protectedBranches: true
+      customBranches: ['main']
+    environmentVariables:
+      - name: ENVIRONMENT
+        value: production
+      - name: API_VERSION
+        value: v1
+      - name: LOG_LEVEL
+        value: warn
+      - name: MONGO_URI
+        value: mongodb://production-mongo:27017
+      - name: MONGO_DATABASE
+        value: production_db 

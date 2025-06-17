@@ -2,14 +2,14 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: golang-ddd-api
-  title: Golang DDD API
-  description: A Domain-Driven Design Golang API template
+  title: Go Microservice DDD API
+  description: A Domain-Driven Design Golang Microservice API template
   tags:
     - golang
     - api
     - ddd
-    - recommended
   type: service
+  approved: false
 
 spec:
   type: service
@@ -19,6 +19,7 @@ spec:
         - component_id
         - owner
         - system
+        - repo_name
       properties:
         component_id:
           title: Component ID
@@ -48,6 +49,16 @@ spec:
           description: Name of the Go module
           default: mymodule
           pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        repo_name:
+          title: Repository Name
+          type: string
+          description: Name of the GitHub repository (will be created under dlopezby93)
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        example_entity:
+          title: Example Entity
+          type: string
+          description: Example entity to be displayed in the controller
+          default: "User"
 
   steps:
     - id: template
@@ -55,23 +66,66 @@ spec:
       action: fetch:template
       input:
         url: ./skeleton
+        targetPath: ./templates/outputs
         values:
           component_id: ${{ parameters.component_id }}
           owner: ${{ parameters.owner }}
           system: ${{ parameters.system }}
           module_name: ${{ parameters.module_name }}
+          repo_name: ${{ parameters.repo_name }}
+          entity: ${{ parameters.example_entity }}
 
-    - id: publish
-      name: Publish
+    - id: create-repo
+      name: Create Repository
       action: publish:github
       input:
-        allowedHosts: ['github.com']
-        description: This is ${{ parameters.component_id }}
-        repoUrl: ${{ parameters.repoUrl }}
+        description: Initial empty commit
+        repoUrl: github.com?owner=dlopezby93&repo=${{ parameters.repo_name }}
+        defaultBranch: main
+        sourcePath: ./empty
 
-    - id: register
-      name: Register
-      action: catalog:register
+    - id: create-pr
+      name: Create Pull Request
+      action: publish:github:pull-request
       input:
-        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
-        catalogInfoPath: '/catalog-info.yaml' 
+        description: This is ${{ parameters.component_id }}
+        repoUrl: github.com?owner=dlopezby93&repo=${{ parameters.repo_name }}
+        title: Initial commit for ${{ parameters.component_id }}
+        branchName: feature/initial-setup
+        sourcePath: ./templates/outputs
+        targetBranchName: main
+
+    - id: configure-development
+      name: Configure Development Environment
+      action: github:environment:create
+      input:
+        repoUrl: github.com?owner=dlopezby93&repo=${{ parameters.repo_name }}
+        name: development
+        deploymentBranchPolicy:
+          protected_branches: false
+          custom_branch_policies: true
+        customBranchPolicyNames: ['develop']
+        environmentVariables:
+          DUMMY_VAR: "dummy_value"
+
+    - id: configure-staging
+      name: Configure Staging Environment
+      action: github:environment:create
+      input:
+        repoUrl: github.com?owner=dlopezby93&repo=${{ parameters.repo_name }}
+        name: staging
+        deploymentBranchPolicy:
+          protected_branches: false
+          custom_branch_policies: true
+        customBranchPolicyNames: ['staging']
+        environmentVariables:
+          DUMMY_VAR: "dummy_value"
+
+  output:
+    links:
+      - title: Repo
+        url: ${{ steps.create-repo.output.remoteUrl }}
+        icon: github
+      - title: Pull Request
+        url: ${{ steps.create-pr.output.pullRequestUrl }}
+        icon: github

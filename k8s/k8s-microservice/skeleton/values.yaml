@@ -1,0 +1,4 @@
+repo_name: ${{values.repo_name}}
+component_id: ${{values.component_id}}
+owner: ${{values.owner}}
+system: ${{values.system}}
