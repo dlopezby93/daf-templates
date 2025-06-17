@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{values.component_id}}
+  description: ${{values.description}}
+  annotations:
+    github.com/project-slug: ${{values.owner}}/${{values.component_id}}
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - golang
+    - api
+    - crud
+  links:
+    - url: https://github.com/${{values.owner}}/${{values.component_id}}
+      title: GitHub Repo
+      icon: github
+spec:
+  type: service
+  lifecycle: experimental
+  owner: ${{values.owner}}
+  system: ${{values.system}} 

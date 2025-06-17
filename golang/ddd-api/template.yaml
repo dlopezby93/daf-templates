@@ -1,0 +1,77 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: golang-ddd-api
+  title: Golang DDD API
+  description: A Domain-Driven Design Golang API template
+  tags:
+    - golang
+    - api
+    - ddd
+    - recommended
+  type: service
+
+spec:
+  type: service
+  parameters:
+    - title: Provide basic information
+      required:
+        - component_id
+        - owner
+        - system
+      properties:
+        component_id:
+          title: Component ID
+          type: string
+          description: Unique identifier for the component
+          ui:field: EntityNamePicker
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        owner:
+          title: Owner
+          type: string
+          description: Owner of the component
+          ui:field: OwnerPicker
+          ui:options:
+            allowedKinds:
+              - Group
+        system:
+          title: System
+          type: string
+          description: System that the component belongs to
+          ui:field: EntityNamePicker
+          ui:options:
+            allowedKinds:
+              - System
+        module_name:
+          title: Go Module Name
+          type: string
+          description: Name of the Go module
+          default: mymodule
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+
+  steps:
+    - id: template
+      name: Fetch Template
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          component_id: ${{ parameters.component_id }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          module_name: ${{ parameters.module_name }}
+
+    - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: This is ${{ parameters.component_id }}
+        repoUrl: ${{ parameters.repoUrl }}
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml' 
